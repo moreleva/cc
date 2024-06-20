@@ -3,21 +3,26 @@
 #include <DHT.h>
 #include <Wire.h>
 #include "MQ7.h"
+#include <NanoEdgeAI.h>
+#include "led.h"
 
 /* Macros definition */
 #define SERIAL_BAUD_RATE 115200
 #define DHTPIN 7
 #define DHTTYPE DHT11
 #define PIN_MQ2 A0
+#define FAN_PIN 11
+#define FS_ADDR 0x01
 
 /* NanoEdgeAI defines part */
-#define NEAI_MODE 0
+#define NEAI_MODE 1
 #define SENSOR_SAMPLES 32
 #define AXIS 4
 
-/* Create instances of sensors */
+/* Create instances */
 DHT dht(DHTPIN, DHTTYPE);
 MQ7 mq7(A1, 5.0);
+
 
 /* Global variables definitions */
 static uint8_t drdy = 0;
@@ -25,6 +30,8 @@ static uint16_t neai_ptr = 0;
 static float neai_buffer[SENSOR_SAMPLES * AXIS] = {0.0};
 static float mq2_value;
 static float humidity = 0.0;
+int  fanSpeed;
+CRGB color; 
 
 /* NEAI library variables */
 static uint8_t neai_code = 0, similarity = 0;
@@ -35,6 +42,8 @@ void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
   dht.begin();
   pinMode(PIN_MQ2, INPUT);
+  pinMode(3, OUTPUT);
+  setupStrip(); 
 
   pinMode(SCL, OUTPUT);
   for (uint8_t i = 0; i < 20; i++) {
@@ -44,10 +53,10 @@ void setup() {
   delay(100);
 
   /* Initalize NanoEdgeAI AI */
-  /*neai_code = neai_anomalydetection_init();
+  neai_code = neai_anomalydetection_init();
     if (neai_code != NEAI_OK) {
     Serial.print("Not supported board.\n");
-    } */
+    } 
 
 }
 
@@ -67,7 +76,7 @@ void loop() {
     neai_ptr = 0;
 
     if (NEAI_MODE) {
-      /*   if(neai_cnt < MINIMUM_ITERATION_CALLS_FOR_EFFICIENT_LEARNING) {
+        if(neai_cnt < MINIMUM_ITERATION_CALLS_FOR_EFFICIENT_LEARNING) {
            neai_anomalydetection_learn(neai_buffer);
            Serial.print((String)"Learn: " + neai_cnt + "/" + MINIMUM_ITERATION_CALLS_FOR_EFFICIENT_LEARNING + ".\n");
            neai_cnt++;
@@ -75,11 +84,18 @@ void loop() {
          else {
            neai_anomalydetection_detect(neai_buffer, &similarity);
            Serial.print((String)"Detect: " + similarity + "/100.\n");
+           if (similarity < 70) {
+            fanSpeed = 250;  
+            color = CRGB::Red; 
+           }
+           else {
+            fanSpeed = 0; 
+            color = CRGB::Green; 
+           }
+           analogWrite(FAN_PIN, fanSpeed);
+           blinkStrip(color);
          }
-        }
-
-        neai_classification(neai_buffer, output_class_buffer, &id_class);
-      */
+      
     }
     else {
       /* Print the whole buffer to the serial */
