@@ -5,6 +5,9 @@
 #include "MQ7.h"
 #include <NanoEdgeAI.h>
 #include "led.h"
+#undef PORT
+#include "Arduino_LED_Matrix.h"
+#include "animation.h"
 
 /* Macros definition */
 #define SERIAL_BAUD_RATE 115200
@@ -22,6 +25,7 @@
 /* Create instances */
 DHT dht(DHTPIN, DHTTYPE);
 MQ7 mq7(A1, 5.0);
+ArduinoLEDMatrix matrix;
 
 
 /* Global variables definitions */
@@ -46,6 +50,7 @@ void setup() {
   pinMode(3, OUTPUT);
   pinMode(10, OUTPUT);
   setupStrip();
+  matrix.begin();
 
   pinMode(SCL, OUTPUT);
   for (uint8_t i = 0; i < 20; i++) {
@@ -59,7 +64,6 @@ void setup() {
   if (neai_code != NEAI_OK) {
     Serial.print("Not supported board.\n");
   }
-
 }
 
 /* Main function */
@@ -90,6 +94,8 @@ void loop() {
         anomaly = (similarity < 70) ? true : false;
 
         if (anomaly) {
+          matrix.loadSequence(red);
+          matrix.play(true);
           fanSpeed = 250;
           color = CRGB::Red;
           //tone(10,900,200);
@@ -97,6 +103,8 @@ void loop() {
           blinkStrip(color);
         }
         else {
+          matrix.loadSequence(green);
+          matrix.play(true);
           analogWrite(FAN_PIN, 0);
           blinkStrip(CRGB::Green);
         }
