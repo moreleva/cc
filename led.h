@@ -162,7 +162,7 @@ const int stripPin = 2;
 CRGB leds[NUM_LEDS];
 
 unsigned long lastBlinkTime = 0;
-const long blinkInterval = 100;
+const long blinkInterval = 30;
 bool ledsOn = false;
 
 void setupStrip() {
@@ -172,7 +172,7 @@ void setupStrip() {
   FastLED.show();
 }
 
-void blinkStrip(CRGB color) {
+/* void blinkStrip(CRGB color) {
   unsigned long currentMillis = millis();
 
   if (currentMillis - lastBlinkTime >= blinkInterval) {
@@ -192,7 +192,26 @@ void blinkStrip(CRGB color) {
         leds[ledNum] = CRGB::Black;
       }
       FastLED.show();
-    }
+    } 
 
+  } */
+
+  void blinkStrip(CRGB color) {
+    for (int i = 0; i < 5; i++) {
+      // Allumer les LEDs
+      for (int ledNum = 0; ledNum < NUM_LEDS; ledNum++) {
+        leds[ledNum] = color;
+      }
+      FastLED.show();
+      delay(250); // Attendre pendant la durée d'allumage
+
+      // Éteindre les LEDs
+      for (int ledNum = 0; ledNum < NUM_LEDS; ledNum++) {
+        leds[ledNum] = CRGB::Black;
+      }
+      FastLED.show();
+      if (i < 5 - 1) { // Éviter d'attendre après le dernier clignotement
+        delay(250); // Attendre pendant la durée d'extinction
+      }
+    }
   }
-}
