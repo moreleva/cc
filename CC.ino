@@ -31,7 +31,8 @@ static float neai_buffer[SENSOR_SAMPLES * AXIS] = {0.0};
 static float mq2_value;
 static float humidity = 0.0;
 int  fanSpeed;
-CRGB color; 
+CRGB color;
+bool anomaly = false;
 
 /* NEAI library variables */
 static uint8_t neai_code = 0, similarity = 0;
@@ -43,7 +44,8 @@ void setup() {
   dht.begin();
   pinMode(PIN_MQ2, INPUT);
   pinMode(3, OUTPUT);
-  setupStrip(); 
+  pinMode(10, OUTPUT);
+  setupStrip();
 
   pinMode(SCL, OUTPUT);
   for (uint8_t i = 0; i < 20; i++) {
