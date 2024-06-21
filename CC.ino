@@ -54,49 +54,53 @@ void setup() {
 
   /* Initalize NanoEdgeAI AI */
   neai_code = neai_anomalydetection_init();
-    if (neai_code != NEAI_OK) {
+  if (neai_code != NEAI_OK) {
     Serial.print("Not supported board.\n");
-    } 
+  }
 
 }
 
 /* Main function */
 void loop() {
   static unsigned long lastReadTime = 0;
+  noTone(10);
   if (millis() - lastReadTime >= 4000) {
     lastReadTime = millis();
     while (neai_ptr < SENSOR_SAMPLES) {
       neai_buffer[AXIS * neai_ptr] = analogRead(PIN_MQ2);
       neai_buffer[(AXIS * neai_ptr) + 1] = mq7.getPPM();
       neai_buffer[(AXIS * neai_ptr) + 2] = dht.readHumidity();
-      neai_buffer[(AXIS * neai_ptr) + 3] = dht.readTemperature(); 
+      neai_buffer[(AXIS * neai_ptr) + 3] = dht.readTemperature();
       neai_ptr++;
     }
 
     neai_ptr = 0;
 
     if (NEAI_MODE) {
-        if(neai_cnt < MINIMUM_ITERATION_CALLS_FOR_EFFICIENT_LEARNING) {
-           neai_anomalydetection_learn(neai_buffer);
-           Serial.print((String)"Learn: " + neai_cnt + "/" + MINIMUM_ITERATION_CALLS_FOR_EFFICIENT_LEARNING + ".\n");
-           neai_cnt++;
-         }
-         else {
-           neai_anomalydetection_detect(neai_buffer, &similarity);
-           Serial.print((String)"Detect: " + similarity + "/100.\n");
-           if (similarity < 70) {
-            fanSpeed = 250;  
-            color = CRGB::Red; 
-           }
-           else {
-            fanSpeed = 0; 
-            color = CRGB::Green; 
-           }
-           analogWrite(FAN_PIN, fanSpeed);
-           blinkStrip(color);
-         }
-      
+      if (neai_cnt < MINIMUM_ITERATION_CALLS_FOR_EFFICIENT_LEARNING) {
+        neai_anomalydetection_learn(neai_buffer);
+        Serial.print((String)"Learn: " + neai_cnt + "/" + MINIMUM_ITERATION_CALLS_FOR_EFFICIENT_LEARNING + ".\n");
+        neai_cnt++;
+      }
+      else {
+        neai_anomalydetection_detect(neai_buffer, &similarity);
+        Serial.print((String)"Detect: " + similarity + "/100.\n");
+        anomaly = (similarity < 70) ? true : false;
+
+        if (anomaly) {
+          fanSpeed = 250;
+          color = CRGB::Red;
+          //tone(10,900,200);
+          analogWrite(FAN_PIN, fanSpeed);
+          blinkStrip(color);
+        }
+        else {
+          analogWrite(FAN_PIN, 0);
+          blinkStrip(CRGB::Green);
+        }
+      }
     }
+
     else {
       /* Print the whole buffer to the serial */
       for (uint16_t i = 0; i < AXIS * SENSOR_SAMPLES; i++) {
